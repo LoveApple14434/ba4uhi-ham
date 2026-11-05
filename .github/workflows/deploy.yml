@@ -1,0 +1,68 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ba4uhi
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          cat > ~/.ssh/config <<EOF
+          Host deploy
+            HostName ${{ secrets.DEPLOY_HOST }}
+            User ${{ secrets.DEPLOY_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking accept-new
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Deploy static site
+        run: |
+          rsync -az --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'server' \
+            --exclude 'card' \
+            --exclude 'preview-*.jpg' \
+            --exclude 'assets/data.js' \
+            --exclude 'README.md' \
+            ./ deploy:/var/www/ba4uhi/
+
+      - name: Deploy admin server
+        run: |
+          rsync -az --delete \
+            --exclude '.env' \
+            --exclude 'backups' \
+            --exclude 'node_modules' \
+            server/ deploy:/opt/ba4uhi-admin/
+
+      - name: Fix ownership and restart
+        run: |
+          ssh deploy 'sudo chown -R www-data:www-data /opt/ba4uhi-admin /var/www/ba4uhi-data && sudo systemctl restart ba4uhi-admin && systemctl is-active ba4uhi-admin'
+
+      - name: Smoke test
+        run: |
+          sleep 3
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://loveapple.space/ba4uhi/ || true)
+            [ "$code" = "200" ] && echo "public page OK" && exit 0
+            echo "attempt $i -> $code, retrying"
+            sleep 5
+          done
+          echo "public page did not return 200" && exit 1
