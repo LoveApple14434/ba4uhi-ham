@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BA4UHI · QSL 通联记录</title>
+  <meta name="description" content="BA4UHI 的业余无线电 QSL 通联记录与卡片预览。QTH 南京市栖霞区，网格 OM92lc，CQ 24 / ITU 44，设备宝锋 UV-5R、泉盛 UV-K6。">
+  <meta name="theme-color" content="#fbe7f0">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23fdf0f6'/%3E%3Ccircle cx='32' cy='32' r='15' fill='none' stroke='%23cf5d91' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23cf5d91'/%3E%3Cpath d='M32 17v11M32 36v11' stroke='%23cf5d91' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/data.js" defer></script>
+  <script src="assets/app.js" defer></script>
+</head>
+<body id="top">
+  <a class="skip-link" href="#log">跳到通联记录</a>
+
+  <header class="site-header">
+    <div class="page-width header-inner">
+      <a class="brand" href="#top" aria-label="BA4UHI 首页">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="16" r="13.5" />
+          <circle cx="16" cy="16" r="4" />
+          <path d="M16 2.5v9M16 20.5v9" />
+        </svg>
+        <span class="brand-name">BA4UHI<small>Amateur Radio</small></span>
+      </a>
+
+      <nav class="site-nav" aria-label="主导航">
+        <a href="#log">通联记录</a>
+        <a class="nav-button" href="https://table.nju.edu.cn/dtable/forms/custom/BA4UHI-QSL/" target="_blank" rel="noopener noreferrer">
+          申请 QSL
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15 15 5M7 5h8v8" /></svg>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-width">
+    <section class="station-card" id="station" aria-labelledby="station-title">
+      <div class="station-copy">
+        <p class="kicker">QSL LOG · NANJING, CHINA</p>
+        <h1 id="station-title">BA4UHI</h1>
+        <p class="tagline">在南京栖霞，向频率里的你问好。</p>
+        <p class="intro">
+          一台宝锋 UV-5R、一台泉盛 UV-K6，和一根原装天线。
+          这里记录每一次公开通联，也欢迎交换 QSL 卡片。
+        </p>
+        <a class="intro-link" href="#cards">查看 QSL 卡片预览 <span aria-hidden="true">↓</span></a>
+      </div>
+
+      <aside class="qr-card" aria-label="QSL 申请二维码">
+        <img src="assets/qsl-qrcode.png" width="240" height="240" alt="BA4UHI QSL 在线申请二维码">
+        <p>扫码填写 QSL 申请</p>
+        <a href="https://table.nju.edu.cn/dtable/forms/custom/BA4UHI-QSL/" target="_blank" rel="noopener noreferrer">在线表格 ↗</a>
+      </aside>
+
+      <dl class="station-facts">
+        <div>
+          <dt>QTH</dt>
+          <dd>南京市栖霞区</dd>
+        </div>
+        <div>
+          <dt>GRID</dt>
+          <dd>OM92lc</dd>
+        </div>
+        <div>
+          <dt>CQ / ITU</dt>
+          <dd>24 / 44</dd>
+        </div>
+        <div>
+          <dt>设备</dt>
+          <dd>宝锋 UV-5R<br>泉盛 UV-K6</dd>
+        </div>
+        <div>
+          <dt>频段 / 模式</dt>
+          <dd>70cm · FM</dd>
+        </div>
+        <div>
+          <dt>功率 / 天线</dt>
+          <dd>1W / 5W · 原装</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="log-panel" id="log" aria-labelledby="log-title">
+      <header class="log-header">
+        <div class="log-heading">
+          <p class="kicker">PUBLIC QSL LOG</p>
+          <h2 id="log-title">QSL 通联记录</h2>
+          <p class="log-intro">从 2025 年 11 月的第一次记录，到最近一次按下 PTT。</p>
+        </div>
+
+        <div class="log-summary" aria-label="通联统计">
+          <span><strong class="js-qso-count">37</strong> 条记录</span>
+          <span><strong class="js-unique-count">32</strong> 位友台</span>
+          <span>最近 <time class="js-latest-date" datetime="2026-09-04">2026.09.04</time></span>
+        </div>
+      </header>
+
+      <div class="toolbar" role="search" aria-label="筛选通联记录">
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="10.8" cy="10.8" r="6.8" />
+            <path d="m16 16 4.2 4.2" />
+          </svg>
+          <span class="sr-only">搜索呼号或 QTH</span>
+          <input id="log-search" type="search" placeholder="搜索呼号 / QTH…" autocomplete="off">
+        </label>
+
+        <label class="select-field">
+          <span>年份</span>
+          <select id="year-filter" aria-label="按年份筛选">
+            <option value="all">全部</option>
+          </select>
+        </label>
+
+        <button class="button button-quiet" id="reset-filters" type="button">重置</button>
+        <button class="button button-export" id="export-csv" type="button">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M10 3v10m0 0 4-4m-4 4L6 9M4 16h12" />
+          </svg>
+          导出 CSV
+        </button>
+      </div>
+
+      <div class="result-line">
+        <p id="result-count" aria-live="polite">共 37 条记录</p>
+      </div>
+
+      <div class="table-wrap">
+        <table class="log-table" id="log-table">
+          <caption class="sr-only">BA4UHI 的 QSL 通联记录，按时间从新到旧排列</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="col-date">日期 / 时间</th>
+              <th scope="col" class="col-call">呼号</th>
+              <th scope="col" class="col-freq">频率 <span>(MHz)</span></th>
+              <th scope="col" class="col-mode">模式</th>
+              <th scope="col" class="col-rst">信号</th>
+              <th scope="col" class="col-qth">QTH</th>
+              <th scope="col" class="col-rig">设备</th>
+              <th scope="col" class="col-note">备注</th>
+            </tr>
+          </thead>
+          <tbody id="log-body"></tbody>
+        </table>
+
+        <div class="empty-state" id="empty-state" hidden>
+          <p class="empty-mark">73</p>
+          <h3>没有找到匹配的记录</h3>
+          <p>换一个呼号或 QTH 试试，或者清除当前筛选。</p>
+          <button class="button button-quiet" id="empty-reset" type="button">清除筛选</button>
+        </div>
+      </div>
+
+      <footer class="log-footer">
+        <span>数据来自本台 QSL 记录</span>
+        <span>73 de BA4UHI</span>
+      </footer>
+    </section>
+
+    <section class="card-gallery" id="cards" aria-labelledby="cards-title">
+      <header class="card-gallery-header">
+        <div>
+          <p class="kicker">QSL CARD · CARD PREVIEW</p>
+          <h2 id="cards-title">我的 QSL 卡片</h2>
+          <p class="card-gallery-intro">六款正面设计，一张标准背面。点击缩略图切换，点击大图在新窗口查看完整图片。</p>
+        </div>
+        <a class="back-to-log" href="#log">返回通联记录 ↑</a>
+      </header>
+
+      <a class="card-stage" id="card-stage-link" href="assets/cards/front-01.webp" target="_blank" rel="noopener noreferrer" aria-label="在新窗口查看 QSL 卡片正面 01">
+        <img id="card-stage-img" src="assets/cards/front-01.webp" width="1400" height="900" alt="QSL 卡片正面 01" loading="eager">
+        <span class="card-stage-label" id="card-stage-label">正面 01 / 06</span>
+      </a>
+
+      <div class="card-thumbs" role="group" aria-label="选择要预览的 QSL 卡片">
+        <button class="card-thumb is-active" type="button" aria-pressed="true" aria-label="预览 QSL 卡片正面 01" data-src="assets/cards/front-01.webp" data-full="assets/cards/front-01.webp" data-label="正面 01 / 06" data-alt="QSL 卡片正面 01" data-width="1400" data-height="900">
+          <img src="assets/cards/front-01-thumb.webp" width="360" height="231" alt="" loading="eager">
+        </button>
+        <button class="card-thumb" type="button" aria-pressed="false" aria-label="预览 QSL 卡片正面 02" data-src="assets/cards/front-02.webp" data-full="assets/cards/front-02.webp" data-label="正面 02 / 06" data-alt="QSL 卡片正面 02" data-width="900" data-height="1400">
+          <img src="assets/cards/front-02-thumb.webp" width="231" height="360" alt="" loading="eager">
+        </button>
+        <button class="card-thumb" type="button" aria-pressed="false" aria-label="预览 QSL 卡片正面 03" data-src="assets/cards/front-03.webp" data-full="assets/cards/front-03.webp" data-label="正面 03 / 06" data-alt="QSL 卡片正面 03" data-width="1400" data-height="900">
+          <img src="assets/cards/front-03-thumb.webp" width="360" height="231" alt="" loading="eager">
+        </button>
+        <button class="card-thumb" type="button" aria-pressed="false" aria-label="预览 QSL 卡片正面 04" data-src="assets/cards/front-04.webp" data-full="assets/cards/front-04.webp" data-label="正面 04 / 06" data-alt="QSL 卡片正面 04" data-width="900" data-height="1400">
+          <img src="assets/cards/front-04-thumb.webp" width="231" height="360" alt="" loading="eager">
+        </button>
+        <button class="card-thumb" type="button" aria-pressed="false" aria-label="预览 QSL 卡片正面 05" data-src="assets/cards/front-05.webp" data-full="assets/cards/front-05.webp" data-label="正面 05 / 06" data-alt="QSL 卡片正面 05" data-width="1400" data-height="900">
+          <img src="assets/cards/front-05-thumb.webp" width="360" height="231" alt="" loading="eager">
+        </button>
+        <button class="card-thumb" type="button" aria-pressed="false" aria-label="预览 QSL 卡片正面 06" data-src="assets/cards/front-06.webp" data-full="assets/cards/front-06.webp" data-label="正面 06 / 06" data-alt="QSL 卡片正面 06" data-width="900" data-height="1400">
+          <img src="assets/cards/front-06-thumb.webp" width="231" height="360" alt="" loading="eager">
+        </button>
+        <button class="card-thumb" type="button" aria-pressed="false" aria-label="预览 QSL 卡片背面" data-src="assets/cards/back.webp" data-full="assets/cards/back.webp" data-label="卡片背面" data-alt="QSL 卡片背面" data-width="1400" data-height="900">
+          <img src="assets/cards/back-thumb.webp" width="360" height="231" alt="" loading="eager">
+        </button>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <p class="footer-call">BA4UHI <span>·</span> 南京栖霞 <span>·</span> OM92lc</p>
+      <nav aria-label="页脚链接">
+        <a href="https://www.qrz.com/db/BA4UHI" target="_blank" rel="noopener noreferrer">QRZ.com</a>
+        <a href="#cards">QSL 卡片</a>
+        <a href="https://table.nju.edu.cn/dtable/forms/custom/BA4UHI-QSL/" target="_blank" rel="noopener noreferrer">QSL 申请</a>
+      </nav>
+      <p class="copyright">© 2025–2026 BA4UHI · 73 &amp; good DX</p>
+    </footer>
+  </main>
+
+  <noscript>
+    <p class="noscript-note">启用 JavaScript 后即可查看和筛选 QSL 通联记录。</p>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbe7f0">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>BA4UHI · QSL 记录管理</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="admin.css">
+  <script src="admin.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="./" aria-label="BA4UHI QSL 记录管理首页">
+        <svg class="brand-mark" viewBox="0 0 44 44" aria-hidden="true">
+          <circle cx="22" cy="22" r="17" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M22 5v9M22 30v9M5 22h9M30 22h9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="22" cy="22" r="4" fill="currentColor"/>
+          <path d="M13 13l4 4M27 27l4 4M31 13l-4 4M17 27l-4 4" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".65"/>
+        </svg>
+        <span class="brand-copy">
+          <strong>BA4UHI</strong>
+          <small>QSL LOG · ADMIN</small>
+        </span>
+      </a>
+      <div class="top-actions">
+        <a class="site-link" id="site-link" href="/" target="_blank" rel="noopener">查看主页 ↗</a>
+        <button class="btn btn-quiet" id="logout-button" type="button" hidden>退出</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="login-view" id="login-view" aria-labelledby="login-title">
+      <div class="login-card">
+        <p class="eyebrow">PRIVATE STATION LOG</p>
+        <h1 id="login-title">站主登录</h1>
+        <p class="login-lead">只有持有管理密码的站主可以查看和修改 QSL 记录。</p>
+        <form id="login-form" class="login-form" novalidate>
+          <label class="field">
+            <span>管理密码</span>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+          </label>
+          <button class="btn btn-primary btn-block" type="submit">进入后台</button>
+          <p class="form-error" id="login-error" role="alert" hidden></p>
+        </form>
+        <p class="login-note">登录状态保持 12 小时。连续 8 次输错会暂时锁定登录。</p>
+      </div>
+      <p class="login-foot">保存后会直接更新 <code>assets/data.js</code>，主页刷新即可看到新记录。</p>
+    </section>
+
+    <section class="app-view" id="app-view" hidden>
+      <header class="admin-head">
+        <div>
+          <p class="eyebrow">QSL LOG · OPERATOR CONSOLE</p>
+          <h1>通联记录管理</h1>
+          <p class="admin-lead">新增、修改或删除通联记录。每次保存都会自动备份原始数据文件。</p>
+        </div>
+        <button class="btn btn-primary" id="add-button" type="button">＋ 新增记录</button>
+      </header>
+
+      <section class="stats-row" aria-label="记录统计">
+        <div class="stat">
+          <strong id="total-count">0</strong>
+          <span>条记录</span>
+        </div>
+        <div class="stat">
+          <strong id="unique-count">0</strong>
+          <span>位友台</span>
+        </div>
+        <div class="stat stat-wide">
+          <strong id="latest-date">—</strong>
+          <span>最近一条</span>
+        </div>
+      </section>
+
+      <section class="list-panel" aria-labelledby="list-title">
+        <div class="list-toolbar">
+          <div>
+            <p class="eyebrow">STATION LOG</p>
+            <h2 id="list-title">全部记录</h2>
+          </div>
+          <label class="search-box">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M15.5 15.5 21 21" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+            <input id="search-input" type="search" placeholder="搜索呼号、QTH 或日期" autocomplete="off">
+          </label>
+        </div>
+
+        <div class="list-meta">
+          <span id="list-status">正在加载…</span>
+          <span class="list-hint">点“编辑”修改，点“删除”移除</span>
+        </div>
+
+        <div class="record-list" id="record-list" aria-live="polite"></div>
+
+        <div class="empty-state" id="empty-state" hidden>
+          <strong>没有找到记录</strong>
+          <span>试试换一个呼号、QTH 或日期。</span>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog class="record-dialog" id="record-dialog" aria-labelledby="dialog-title">
+    <form id="record-form" class="record-form" novalidate>
+      <header class="dialog-head">
+        <div>
+          <p class="eyebrow">QSO RECORD</p>
+          <h2 id="dialog-title">新增记录</h2>
+        </div>
+        <button class="icon-button" id="close-dialog" type="button" aria-label="关闭">×</button>
+      </header>
+
+      <div class="form-grid">
+        <label class="field">
+          <span>日期</span>
+          <input name="date" type="date" required>
+        </label>
+        <label class="field">
+          <span>时间（CST / UTC+8）</span>
+          <input name="time" type="time" required>
+        </label>
+
+        <label class="field span-2">
+          <span>对方呼号</span>
+          <input name="callsign" type="text" maxlength="20" placeholder="例如 BA4UOW" autocapitalize="characters" required>
+        </label>
+
+        <label class="field">
+          <span>接收频率（MHz）</span>
+          <input name="freq_rx" type="text" maxlength="20" placeholder="430.610">
+        </label>
+        <label class="field">
+          <span>发射频率（MHz）</span>
+          <input name="freq_tx" type="text" maxlength="20" placeholder="439.610">
+        </label>
+
+        <label class="field">
+          <span>模式</span>
+          <input name="mode" type="text" maxlength="12" placeholder="FM" list="mode-options">
+          <datalist id="mode-options">
+            <option value="FM"></option>
+            <option value="SSB"></option>
+            <option value="CW"></option>
+            <option value="AM"></option>
+          </datalist>
+        </label>
+        <div class="field-pair">
+          <label class="field">
+            <span>RST 发送</span>
+            <input name="rst_sent" type="text" inputmode="numeric" maxlength="3" placeholder="59">
+          </label>
+          <label class="field">
+            <span>RST 接收</span>
+            <input name="rst_rcvd" type="text" inputmode="numeric" maxlength="3" placeholder="59">
+          </label>
+        </div>
+
+        <label class="field">
+          <span>对方 QTH</span>
+          <input name="qth" type="text" maxlength="80" placeholder="例如 南京市栖霞区">
+        </label>
+        <label class="field">
+          <span>网格</span>
+          <input name="grid" type="text" maxlength="12" placeholder="例如 OM92lc">
+        </label>
+
+        <label class="field">
+          <span>对方设备</span>
+          <input name="rig" type="text" maxlength="80" placeholder="例如 UV-K6">
+        </label>
+        <label class="field">
+          <span>对方天线</span>
+          <input name="ant" type="text" maxlength="80" placeholder="例如 原装">
+        </label>
+
+        <label class="field">
+          <span>对方功率</span>
+          <input name="pwr" type="text" maxlength="20" placeholder="例如 5W">
+        </label>
+        <label class="field">
+          <span>对方姓名</span>
+          <input name="name" type="text" maxlength="80" placeholder="可选">
+        </label>
+
+        <label class="field">
+          <span>我的设备</span>
+          <input name="my_rig" type="text" maxlength="40" placeholder="例如 UV-K6" list="my-rig-options">
+          <datalist id="my-rig-options">
+            <option value="UV-K6"></option>
+            <option value="UV-5R"></option>
+            <option value="宝锋 UV-5R"></option>
+            <option value="泉盛 UV-K6"></option>
+          </datalist>
+        </label>
+        <label class="field">
+          <span>我的天线</span>
+          <input name="my_ant" type="text" maxlength="80" placeholder="例如 原装">
+        </label>
+
+        <label class="field">
+          <span>我的功率</span>
+          <input name="my_pwr" type="text" maxlength="20" placeholder="例如 L / 5W">
+        </label>
+        <label class="field span-2">
+          <span>备注</span>
+          <textarea name="remarks" rows="3" maxlength="500" placeholder="可选，例如比赛、活动或设备备注"></textarea>
+        </label>
+      </div>
+
+      <p class="form-error" id="form-error" role="alert" hidden></p>
+      <footer class="dialog-actions">
+        <span class="save-note">保存前会自动备份 data.js</span>
+        <div>
+          <button class="btn btn-quiet" id="cancel-dialog" type="button">取消</button>
+          <button class="btn btn-primary" id="save-button" type="submit">保存记录</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

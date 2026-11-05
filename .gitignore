@@ -1,0 +1,19 @@
+# local secrets
+.env
+server/.env
+
+# dependencies
+node_modules/
+server/node_modules/
+
+# generated backups and logs
+server/backups/*.js
+!server/backups/.gitkeep
+*.log
+
+# packaging artifact
+ba4uhi-qsl-admin.zip
+
+# OS files
+.DS_Store
+Thumbs.db

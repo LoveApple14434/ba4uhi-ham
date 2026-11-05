@@ -1,0 +1,13 @@
+{
+  "name": "ba4uhi-qsl-admin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Single-user QSL log admin for the BA4UHI static homepage",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
