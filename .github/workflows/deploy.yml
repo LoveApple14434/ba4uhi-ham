@@ -54,15 +54,32 @@ jobs:
 
       - name: Fix ownership and restart
         run: |
-          ssh deploy 'sudo chown -R www-data:www-data /var/www/ba4uhi-data && sudo chmod -R g+w /var/www/ba4uhi /opt/ba4uhi-admin && sudo systemctl restart ba4uhi-admin && systemctl is-active ba4uhi-admin'
+          ssh deploy 'sudo chown -R www-data:www-data /var/www/ba4uhi-data \
+            && sudo chmod -R g+w /var/www/ba4uhi /opt/ba4uhi-admin \
+            && sudo chown www-data:www-data /opt/ba4uhi-admin/.env \
+            && sudo chmod 600 /opt/ba4uhi-admin/.env \
+            && sudo systemctl restart ba4uhi-admin \
+            && sleep 2 && systemctl is-active ba4uhi-admin'
 
       - name: Smoke test
         run: |
           sleep 3
-          for i in 1 2 3 4 5; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://loveapple.space/ba4uhi/ || true)
-            [ "$code" = "200" ] && echo "public page OK" && exit 0
-            echo "attempt $i -> $code, retrying"
-            sleep 5
-          done
-          echo "public page did not return 200" && exit 1
+          check() {
+            local name="$1" url="$2" want="$3"
+            for i in 1 2 3 4 5; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$url" || true)
+              if [ "$code" = "$want" ]; then
+                echo "$name OK ($code)"
+                return 0
+              fi
+              echo "$name attempt $i -> $code, retrying"
+              sleep 5
+            done
+            echo "$name expected $want, got $code"
+            return 1
+          }
+          fail=0
+          check "public page" "https://loveapple.space/ba4uhi/" 200 || fail=1
+          check "admin page"  "https://loveapple.space/ba4uhi-admin/" 200 || fail=1
+          check "data file"   "https://loveapple.space/ba4uhi/assets/data.js?ci=$(date +%s)" 200 || fail=1
+          exit $fail
