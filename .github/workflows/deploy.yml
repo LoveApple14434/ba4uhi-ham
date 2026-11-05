@@ -54,7 +54,7 @@ jobs:
 
       - name: Fix ownership and restart
         run: |
-          ssh deploy 'sudo chown -R www-data:www-data /opt/ba4uhi-admin /var/www/ba4uhi-data && sudo systemctl restart ba4uhi-admin && systemctl is-active ba4uhi-admin'
+          ssh deploy 'sudo chown -R www-data:www-data /var/www/ba4uhi-data && sudo chmod -R g+w /var/www/ba4uhi /opt/ba4uhi-admin && sudo systemctl restart ba4uhi-admin && systemctl is-active ba4uhi-admin'
 
       - name: Smoke test
         run: |
