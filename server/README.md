@@ -244,4 +244,4 @@ location = /blog/QSL-LOG/assets/data.js {
 | `my_rig` / `my_ant` / `my_pwr` | 本台设备 / 天线 / 功率 |
 | `remarks` | 备注 |
 
-公开主页会把 `my_rig` 中包含 `UV-K6` 的记录识别为泉盛 UV-K6，其余识别为宝锋 UV-5R；如需新增设备，可同时调整 `assets/app.js` 中的归一化逻辑。
+公开主页会把 `my_rig` 中包含 `UV-K6` 的记录识别为泉盛 UV-K6，包含 `5R` 的识别为宝锋 UV-5R；`my_rig` 为 `HT` 时显示 `HT`，其余值显示“未记录”。如需新增设备，可同时调整 `assets/app.js` 中的归一化逻辑。

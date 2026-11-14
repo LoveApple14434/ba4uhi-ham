@@ -48,6 +48,7 @@
 
   const classifyMyRig = (value) => {
     const text = cleanText(value);
+    if (/^ht$/i.test(text)) return "HT";
     if (/k6/i.test(text)) return "UV-K6";
     if (/5r/i.test(text)) return "UV-5R";
     return "unrecorded";
@@ -85,7 +86,13 @@
       remoteAnt: formatAntenna(record.ant),
       remotePower: formatPower(record.pwr),
       myRigKey,
-      myRig: myRigKey === "UV-K6" ? "泉盛 UV-K6" : myRigKey === "UV-5R" ? "宝锋 UV-5R" : "未记录",
+      myRig: myRigKey === "UV-K6"
+        ? "泉盛 UV-K6"
+        : myRigKey === "UV-5R"
+          ? "宝锋 UV-5R"
+          : myRigKey === "HT"
+            ? "HT"
+            : "未记录",
       myAnt: formatAntenna(record.my_ant),
       myPower: formatPower(record.my_pwr),
       remarks: cleanText(record.remarks) || "—",

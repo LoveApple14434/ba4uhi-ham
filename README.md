@@ -5,8 +5,8 @@
 - QTH：中国 · 江苏省南京市栖霞区
 - Maidenhead 网格：`OM92lc`
 - CQ Zone 24 / ITU Zone 44
-- 设备：宝锋 UV-5R、泉盛 UV-K6
-- 公开主页数据：`assets/data.js` 中的 37 条记录、32 个呼号
+- 设备：宝锋 UV-5R、泉盛 UV-K6；部分主控记录记作 `HT`
+- 公开主页数据：`assets/data.js` 中的 73 条记录、64 个呼号
 
 ## 项目结构
 
