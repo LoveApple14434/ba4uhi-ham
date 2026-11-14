@@ -35,6 +35,21 @@ const TRUST_PROXY = process.env.TRUST_PROXY === "1";
 const PUBLIC_ORIGIN = (process.env.PUBLIC_ORIGIN || "").replace(/\/+$/, "");
 const SITE_URL = process.env.SITE_URL || "/";
 
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
+const GITHUB_REPO = (process.env.GITHUB_REPO || "").trim();
+const GITHUB_BRANCH = (process.env.GITHUB_BRANCH || "main").trim();
+const GITHUB_DATA_PATH = (process.env.GITHUB_DATA_PATH || "assets/data.js")
+  .trim()
+  .replace(/^\/+|\/+$/g, "");
+const GITHUB_API_BASE = (process.env.GITHUB_API_BASE || "https://api.github.com")
+  .replace(/\/+$/, "");
+const GITHUB_SYNC_ENABLED =
+  process.env.GITHUB_SYNC !== "0" && Boolean(GITHUB_TOKEN && GITHUB_REPO);
+const GITHUB_SYNC_FORCE = process.env.GITHUB_SYNC_FORCE === "1";
+const GITHUB_STATE_FILE = path.resolve(
+  process.env.GITHUB_STATE_FILE || path.join(BACKUP_DIR, "github-sync.json")
+);
+
 const COOKIE_NAME = "ba4uhi_admin_sid";
 const SESSION_TTL = 12 * 60 * 60 * 1000;
 const MAX_BODY = 64 * 1024;
@@ -54,6 +69,15 @@ if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 12) {
 }
 if (!fs.existsSync(DATA_FILE)) {
   fail(`DATA_FILE does not exist: ${DATA_FILE}`);
+}
+if (GITHUB_REPO && !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(GITHUB_REPO)) {
+  fail("GITHUB_REPO must look like owner/repository");
+}
+if (!GITHUB_DATA_PATH || GITHUB_DATA_PATH.split("/").includes("..")) {
+  fail("GITHUB_DATA_PATH must be a repository-relative path");
+}
+if (GITHUB_SYNC_ENABLED && !GITHUB_BRANCH) {
+  fail("GITHUB_BRANCH cannot be empty");
 }
 
 fs.mkdirSync(BACKUP_DIR, { recursive: true });
@@ -343,16 +367,157 @@ function buildRecord(body, existing) {
   return record;
 }
 
-function readData() {
-  const source = fs.readFileSync(DATA_FILE, "utf8");
+function parseDataText(source, filename = DATA_FILE) {
   const sandbox = { window: {} };
-  vm.runInNewContext(source, sandbox, { filename: DATA_FILE, timeout: 1000 });
+  vm.runInNewContext(source, sandbox, { filename, timeout: 1000 });
   const data = sandbox.window.HAM_DATA;
   if (!data || !Array.isArray(data.records)) {
     throw new Error("data.js does not contain window.HAM_DATA.records");
   }
   return data;
 }
+
+function readData() {
+  return parseDataText(fs.readFileSync(DATA_FILE, "utf8"));
+}
+
+function renderData(data) {
+  return (
+    "/* QSL log data — generated from BA4UHI QSL log. Managed by server admin. */\n" +
+    `window.HAM_DATA = ${JSON.stringify(data, null, 2)};\n`
+  );
+}
+
+function recordKey(record) {
+  return `${record.date || ""}|${record.time || ""}|${record.callsign || ""}`;
+}
+
+function readSyncState() {
+  try {
+    const state = JSON.parse(fs.readFileSync(GITHUB_STATE_FILE, "utf8"));
+    return state && typeof state.contentSha === "string" ? state : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSyncState(contentSha) {
+  const state = { contentSha, syncedAt: nowIso() };
+  fs.mkdirSync(path.dirname(GITHUB_STATE_FILE), { recursive: true });
+  const tempFile = `${GITHUB_STATE_FILE}.tmp-${process.pid}`;
+  fs.writeFileSync(tempFile, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+  fs.renameSync(tempFile, GITHUB_STATE_FILE);
+}
+
+class GitHubError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function githubRequest(method, endpoint, body) {
+  const response = await fetch(`${GITHUB_API_BASE}${endpoint}`, {
+    method,
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "ba4uhi-qsl-admin",
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(10000),
+  });
+
+  const text = await response.text();
+  let payload = null;
+  try {
+    payload = text ? JSON.parse(text) : null;
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const detail = payload && payload.message ? payload.message : `HTTP ${response.status}`;
+    throw new GitHubError(response.status, detail);
+  }
+  return payload;
+}
+
+async function syncDataToGitHub(content, data) {
+  if (!GITHUB_SYNC_ENABLED) return { status: "disabled" };
+
+  const encodedPath = GITHUB_DATA_PATH.split("/").map(encodeURIComponent).join("/");
+  const endpoint = `/repos/${GITHUB_REPO}/contents/${encodedPath}`;
+  let remote = null;
+  try {
+    remote = await githubRequest(
+      "GET",
+      `${endpoint}?ref=${encodeURIComponent(GITHUB_BRANCH)}`
+    );
+  } catch (error) {
+    if (!(error instanceof GitHubError) || error.status !== 404) throw error;
+  }
+
+  const remoteSha = remote && typeof remote.sha === "string" ? remote.sha : null;
+  const lastSync = readSyncState();
+  const unchangedSinceLastSync =
+    Boolean(lastSync && remoteSha && lastSync.contentSha === remoteSha);
+
+  if (remote && remote.content && !unchangedSinceLastSync && !GITHUB_SYNC_FORCE) {
+    let remoteData;
+    try {
+      remoteData = parseDataText(
+        Buffer.from(remote.content, "base64").toString("utf8"),
+        "GitHub:" + GITHUB_DATA_PATH
+      );
+    } catch (error) {
+      throw new Error(`无法解析 GitHub 上的数据文件：${error.message}`);
+    }
+    const localKeys = new Set(data.records.map(recordKey));
+    const remoteOnly = remoteData.records.filter(
+      (record) => !localKeys.has(recordKey(record))
+    );
+    if (remoteOnly.length > 0) {
+      return {
+        status: "blocked",
+        message:
+          `GitHub 上有 ${remoteOnly.length} 条记录在线上数据中不存在，` +
+          "为避免覆盖已停止同步；请先核对或使用 GITHUB_SYNC_FORCE=1 强制覆盖。",
+      };
+    }
+  }
+
+  const message = `data: sync QSL log from admin ${new Date()
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ")} UTC [skip ci]`;
+  const result = await githubRequest("PUT", endpoint, {
+    message,
+    content: Buffer.from(content, "utf8").toString("base64"),
+    branch: GITHUB_BRANCH,
+    ...(remoteSha ? { sha: remoteSha } : {}),
+  });
+
+  const newSha = result && result.content && result.content.sha;
+  if (newSha) writeSyncState(newSha);
+  return {
+    status: "ok",
+    repo: GITHUB_REPO,
+    branch: GITHUB_BRANCH,
+    commitUrl: (result && result.commit && result.commit.html_url) || null,
+  };
+}
+
+function githubSyncInfo() {
+  return {
+    enabled: GITHUB_SYNC_ENABLED,
+    repo: GITHUB_REPO || null,
+    branch: GITHUB_BRANCH,
+  };
+}
+
 
 function pruneBackups() {
   const files = fs
@@ -386,9 +551,7 @@ function writeData(data) {
     generated_at: now,
   };
 
-  const content =
-    "/* QSL log data — generated from BA4UHI QSL log. Managed by server admin. */\n" +
-    `window.HAM_DATA = ${JSON.stringify(data, null, 2)};\n`;
+  const content = renderData(data);
 
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
   if (fs.existsSync(DATA_FILE)) {
@@ -407,6 +570,7 @@ function writeData(data) {
   );
   fs.writeFileSync(tempFile, content, "utf8");
   fs.renameSync(tempFile, DATA_FILE);
+  return content;
 }
 
 function listResponse(data) {
@@ -427,11 +591,18 @@ function listResponse(data) {
 }
 
 function mutateData(mutator) {
-  const run = writeQueue.then(() => {
+  const run = writeQueue.then(async () => {
     const data = readData();
     const result = mutator(data);
-    writeData(data);
-    return result;
+    const content = writeData(data);
+    let sync = { status: "disabled" };
+    try {
+      sync = await syncDataToGitHub(content, data);
+    } catch (error) {
+      console.error("[qsl-admin] GitHub sync failed:", error);
+      sync = { status: "error", message: error.message || "GitHub 同步失败" };
+    }
+    return { ...result, sync };
   });
   writeQueue = run.catch(() => {});
   return run;
@@ -510,6 +681,7 @@ async function handleApi(req, res, apiPath) {
       authenticated: true,
       csrfToken: found.session.csrf,
       siteUrl: SITE_URL,
+      githubSync: githubSyncInfo(),
     });
     return;
   }
@@ -541,6 +713,7 @@ async function handleApi(req, res, apiPath) {
       ok: true,
       csrfToken: session.csrf,
       siteUrl: SITE_URL,
+      githubSync: githubSyncInfo(),
     });
     return;
   }
@@ -553,6 +726,25 @@ async function handleApi(req, res, apiPath) {
     }
     res.setHeader("Set-Cookie", sessionCookie("", 0));
     sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  if (apiPath === "/api/sync" && req.method === "POST") {
+    if (!sameOrigin(req)) throw new HttpError(403, "Origin 校验失败");
+    const found = requireAuth(req);
+    requireCsrf(req, found.session);
+    const run = writeQueue.then(async () => {
+      const data = readData();
+      try {
+        return await syncDataToGitHub(renderData(data), data);
+      } catch (error) {
+        console.error("[qsl-admin] GitHub sync failed:", error);
+        return { status: "error", message: error.message || "GitHub 同步失败" };
+      }
+    });
+    writeQueue = run.catch(() => {});
+    const sync = await run;
+    sendJson(res, 200, { ok: sync.status === "ok", sync });
     return;
   }
 
@@ -673,6 +865,11 @@ server.listen(PORT, HOST, () => {
   console.log(`[qsl-admin] listening on http://${HOST}:${PORT}${BASE_PATH}/`);
   console.log(`[qsl-admin] data file: ${DATA_FILE}`);
   console.log(`[qsl-admin] backups:  ${BACKUP_DIR}`);
+  console.log(
+    `[qsl-admin] github sync: ${
+      GITHUB_SYNC_ENABLED ? `enabled (${GITHUB_REPO}@${GITHUB_BRANCH})` : "disabled"
+    }`
+  );
 });
 
 setInterval(() => {

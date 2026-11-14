@@ -1,6 +1,8 @@
 # local secrets
 .env
 server/.env
+server/.github-sync.json
+server/backups/github-sync.json
 
 # dependencies
 node_modules/

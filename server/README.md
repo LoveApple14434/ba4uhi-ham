@@ -33,12 +33,14 @@ server/
 server/../assets/data.js
 ```
 
-也就是主页旁边的 `assets/data.js`。部署时建议在 `.env` 里写绝对路径，例如：
+也就是主页旁边的 `assets/data.js`。GitHub Actions 部署时，线上可写数据文件放在静态目录之外：
 
 ```env
-DATA_FILE=/www/wwwroot/ba4uhi/assets/data.js
-BACKUP_DIR=/www/wwwroot/ba4uhi-admin/backups
+DATA_FILE=/var/www/ba4uhi-data/data.js
+BACKUP_DIR=/opt/ba4uhi-admin/backups
 ```
+
+如果是宝塔手工部署，把这两个路径改成实际目录即可。
 
 要求：
 
@@ -61,16 +63,16 @@ chmod 600 .env
 ```env
 PORT=3010
 HOST=127.0.0.1
-BASE_PATH=/admin
+BASE_PATH=/ba4uhi-admin
 
-DATA_FILE=/www/wwwroot/ba4uhi/assets/data.js
-BACKUP_DIR=/www/wwwroot/ba4uhi-admin/backups
+DATA_FILE=/var/www/ba4uhi-data/data.js
+BACKUP_DIR=/opt/ba4uhi-admin/backups
 
 ADMIN_PASSWORD=请替换成至少12位的随机密码
 COOKIE_SECURE=1
 TRUST_PROXY=1
 PUBLIC_ORIGIN=https://loveapple.space
-SITE_URL=/blog/QSL-LOG/
+SITE_URL=/ba4uhi/
 ```
 
 说明：
@@ -81,6 +83,29 @@ SITE_URL=/blog/QSL-LOG/
 - `PUBLIC_ORIGIN` 建议填写公开主页的完整来源（协议 + 域名）；它用于拒绝其他站点的写请求。
 - `SITE_URL` 是后台右上角“查看主页”的链接，可填完整 URL 或站内路径。
 
+### 可选：保存后自动同步到 GitHub
+
+后台可以把每次成功保存后的 `data.js` 提交回 GitHub 仓库，作为线上数据的版本备份。同步是**单向的：线上 → GitHub**。
+
+1. 在 GitHub 创建一个 **fine-grained personal access token**，只授权 `LoveApple14434/ba4uhi-ham` 这个仓库，权限选 **Contents: Read and write**。
+2. 在 `.env` 中填写：
+
+```env
+GITHUB_TOKEN=github_pat_xxx
+GITHUB_REPO=LoveApple14434/ba4uhi-ham
+GITHUB_BRANCH=main
+GITHUB_DATA_PATH=assets/data.js
+GITHUB_SYNC=1
+GITHUB_STATE_FILE=/opt/ba4uhi-admin/backups/github-sync.json
+```
+
+3. `GITHUB_STATE_FILE` 用来记录上次同步后的文件 SHA，防止覆盖仓库中独有、线上没有的记录；该文件必须可写，但不要公开，也不要在仓库中提交。默认值是 `BACKUP_DIR/github-sync.json`，放在备份目录中，代码重新部署时不会被清掉。
+4. 同步提交信息带 `[skip ci]`，因此不会因为每次录入触发完整部署。公开站点的部署工作流刻意排除 `assets/data.js`，线上数据仍以 `DATA_FILE` 为准。
+5. 如果 GitHub 上有记录而线上没有，后台会**拒绝同步**并提示数量，避免把仓库备份覆盖掉。确认要强制覆盖时才设置 `GITHUB_SYNC_FORCE=1`；处理完请改回 `0`。
+6. GitHub 不可用、Token 失效或网络超时时，记录仍会正常写入本地 `data.js`，后台只提示同步失败，不会丢记录。
+
+> 首次启用同步前，请确认线上 `DATA_FILE` 已经包含仓库中的全部记录。当前仓库可能领先线上（例如批量导入的记录还没导入线上后台）；这种状态下首次保存会被上述保护拒绝，这是预期行为。
+
 ## 三、启动
 
 ```bash
@@ -90,14 +115,16 @@ node app.js
 看到类似输出即成功：
 
 ```text
-[qsl-admin] listening on http://127.0.0.1:3010/admin/
-[qsl-admin] data file: /www/wwwroot/ba4uhi/assets/data.js
+[qsl-admin] listening on http://127.0.0.1:3010/ba4uhi-admin/
+[qsl-admin] data file: /var/www/ba4uhi-data/data.js
+[qsl-admin] backups:  /opt/ba4uhi-admin/backups
+[qsl-admin] github sync: enabled (LoveApple14434/ba4uhi-ham@main)
 ```
 
 本机可以先验证：
 
 ```bash
-curl http://127.0.0.1:3010/admin/api/health
+curl http://127.0.0.1:3010/ba4uhi-admin/api/health
 # {"ok":true,"service":"ba4uhi-qsl-admin"}
 ```
 
@@ -123,14 +150,14 @@ pm2 startup
 
 ## 四、Nginx 反向代理
 
-推荐让后台与公开主页同域，路径为 `/admin/`。在站点 Nginx 配置中加入：
+推荐让后台与公开主页同域，路径为 `/ba4uhi-admin/`。在站点 Nginx 配置中加入：
 
 ```nginx
-location = /admin {
-    return 301 /admin/;
+location = /ba4uhi-admin {
+    return 301 /ba4uhi-admin/;
 }
 
-location /admin/ {
+location /ba4uhi-admin/ {
     proxy_pass http://127.0.0.1:3010;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -144,14 +171,15 @@ location /admin/ {
 
 注意：
 
-- `proxy_pass` 后面不要加路径（不要写成 `http://127.0.0.1:3010/`），否则 `/admin` 前缀会被剥掉，后台路由会 404。
+- 这里的路径必须与 `.env` 的 `BASE_PATH` 完全一致；当前仓库的 GitHub Actions 部署使用 `/ba4uhi-admin/`。
+- `proxy_pass` 后面不要加路径（不要写成 `http://127.0.0.1:3010/`），否则 `/ba4uhi-admin` 前缀会被剥掉，后台路由会 404。
 - 这段配置要放在静态站点的通用 `location /` 之前。
 - 保存后执行 `nginx -t`，再 reload。
-- 如果使用 HTTPS，确保 `COOKIE_SECURE=1`，并且访问地址是 `https://你的域名/admin/`。
+- 如果使用 HTTPS，确保 `COOKIE_SECURE=1`，并且访问地址是 `https://你的域名/ba4uhi-admin/`。
 
 ## 五、使用
 
-1. 打开 `https://你的域名/admin/`；
+1. 打开 `https://你的域名/ba4uhi-admin/`；
 2. 输入 `.env` 中的 `ADMIN_PASSWORD`；
 3. 右上角“新增记录”；
 4. 填写日期、时间、对方呼号；其余字段按需填写；
@@ -171,7 +199,7 @@ location /admin/ {
 如果保存出错或内容需要回滚，停掉后台，把某个备份复制回数据文件：
 
 ```bash
-cp backups/data-YYYYMMDD-HHMMSS.js /www/wwwroot/ba4uhi/assets/data.js
+cp backups/data-YYYYMMDD-HHMMSS.js /var/www/ba4uhi-data/data.js
 ```
 
 然后重新启动后台。备份文件本身就是完整的 `data.js` 内容。
@@ -181,8 +209,8 @@ cp backups/data-YYYYMMDD-HHMMSS.js /www/wwwroot/ba4uhi/assets/data.js
 - 必须使用 HTTPS；后台登录页和 API 都带 `noindex`，但这不等于访问控制。
 - `ADMIN_PASSWORD` 使用随机长密码，不要与其他网站共用。
 - `.env` 权限设为 `600`，不要提交到代码仓库。
-- 不要把 `server/` 放进 Nginx 的静态根目录；只代理 `/admin/`。
-- 可选：在 Nginx 的 `/admin/` location 里再加一层 IP 白名单：
+- 不要把 `server/` 放进 Nginx 的静态根目录；只代理 `/ba4uhi-admin/`。
+- 可选：在 Nginx 的 `/ba4uhi-admin/` location 里再加一层 IP 白名单：
 
 ```nginx
 allow 203.0.113.10;
@@ -197,9 +225,9 @@ deny all;
 
 ## 八、常见问题
 
-**打开 `/admin/` 显示 404**
+**打开 `/ba4uhi-admin/` 显示 404**
 
-检查 Nginx 的 `proxy_pass` 是否保留了 `/admin` 前缀，以及 Node 是否监听在 `.env` 配置的端口。
+检查 Nginx 的 `proxy_pass` 是否保留了 `/ba4uhi-admin` 前缀，以及 Node 是否监听在 `.env` 配置的端口。
 
 **登录成功但保存时报 403**
 
@@ -214,7 +242,7 @@ deny all;
 浏览器或 Nginx 缓存了 `assets/data.js`。强制刷新主页；如果站点设置了长缓存，给这个文件加：
 
 ```nginx
-location = /blog/QSL-LOG/assets/data.js {
+location = /ba4uhi/assets/data.js {
     add_header Cache-Control "no-cache, must-revalidate";
 }
 ```

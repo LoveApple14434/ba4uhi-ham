@@ -45,6 +45,7 @@ python -m http.server 8000
 cd server
 cp .env.example .env
 # 编辑 .env：ADMIN_PASSWORD、DATA_FILE、BACKUP_DIR
+# 可选：GITHUB_TOKEN / GITHUB_REPO 开启保存后自动同步仓库
 node app.js
 ```
 
@@ -56,8 +57,9 @@ node app.js
 ## 数据与卡片
 
 - 通联记录集中在 `assets/data.js`；后台每次保存会先备份，再原子替换该文件。
+- 可选开启 GitHub 自动同步：线上保存成功后把 `assets/data.js` 提交回仓库，提交带 `[skip ci]`，不会反复触发部署。
 - QSL 卡片展示图由 `card/` 中的原图生成，页面使用 `assets/cards/` 下的优化 WebP。
-- `.env`、`server/.env`、`server/backups/*.js` 和日志文件不进入版本库。
+- `.env`、`server/.env`、`server/backups/*.js`、`server/backups/github-sync.json` 和日志文件不进入版本库。
 - 管理密码只放在服务器环境变量 `.env` 中，不写入前端或仓库。
 
 ## 说明

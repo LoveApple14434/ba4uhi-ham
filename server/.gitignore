@@ -1,4 +1,6 @@
 .env
+.github-sync.json
+backups/github-sync.json
 node_modules/
 backups/*.js
 !backups/.gitkeep

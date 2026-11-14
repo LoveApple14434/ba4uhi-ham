@@ -15,6 +15,7 @@
     total: $("total-count"),
     unique: $("unique-count"),
     latest: $("latest-date"),
+    syncState: $("sync-state"),
     search: $("search-input"),
     listStatus: $("list-status"),
     recordList: $("record-list"),
@@ -35,6 +36,7 @@
     query: "",
     editingId: null,
     siteUrl: "/",
+    githubSync: null,
   };
 
   let toastTimer = 0;
@@ -84,10 +86,12 @@
     state.records = [];
     state.query = "";
     state.editingId = null;
+    state.githubSync = null;
     closeDialog();
     els.loginView.hidden = false;
     els.appView.hidden = true;
     els.logout.hidden = true;
+    els.syncState.hidden = true;
     els.password.value = "";
     setLoginError(message);
     window.setTimeout(() => els.password.focus(), 30);
@@ -97,6 +101,7 @@
     els.loginView.hidden = true;
     els.appView.hidden = false;
     els.logout.hidden = false;
+    renderGithubSync();
   }
 
   function setLoginError(message) {
@@ -109,13 +114,35 @@
     els.formError.hidden = !message;
   }
 
-  function toast(message) {
+  function toast(message, duration = 3200) {
     els.toast.textContent = message;
     els.toast.classList.add("is-visible");
     window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(() => {
       els.toast.classList.remove("is-visible");
-    }, 3200);
+    }, duration);
+  }
+
+  function renderGithubSync() {
+    const info = state.githubSync;
+    els.syncState.hidden = false;
+    els.syncState.classList.toggle("is-warning", !info || !info.enabled);
+    if (info && info.enabled) {
+      els.syncState.textContent = `GitHub 自动同步已开启 · ${info.repo}@${info.branch}`;
+    } else {
+      els.syncState.textContent = "GitHub 自动同步未配置；保存只会写入本机数据文件。";
+    }
+  }
+
+  function syncMessage(base, sync) {
+    if (!sync || sync.status === "disabled") return base;
+    if (sync.status === "ok") return `${base}，已同步 GitHub`;
+    if (sync.status === "blocked") return `${base}；GitHub 未同步：${sync.message}`;
+    return `${base}；GitHub 同步失败：${sync.message || "请检查服务器配置"}`;
+  }
+
+  function syncDuration(sync) {
+    return sync && (sync.status === "blocked" || sync.status === "error") ? 7000 : 3200;
   }
 
   function escapeHtml(value) {
@@ -355,7 +382,10 @@
       updateStats(data);
       renderRecords();
       closeDialog();
-      toast(isEdit ? "记录已更新" : "记录已添加");
+      toast(
+        syncMessage(isEdit ? "记录已更新" : "记录已添加", data.sync),
+        syncDuration(data.sync)
+      );
       if (values.my_rig) {
         try {
           window.localStorage.setItem("ba4uhi-last-rig", values.my_rig);
@@ -381,7 +411,7 @@
       state.records = data.records || [];
       updateStats(data);
       renderRecords();
-      toast("记录已删除");
+      toast(syncMessage("记录已删除", data.sync), syncDuration(data.sync));
     } catch (error) {
       toast(error.message);
     }
@@ -407,6 +437,7 @@
         body: JSON.stringify({ password }),
       });
       state.csrfToken = data.csrfToken;
+      state.githubSync = data.githubSync || null;
       setSiteUrl(data.siteUrl);
       els.password.value = "";
       showApp();
@@ -437,6 +468,7 @@
         return;
       }
       state.csrfToken = session.csrfToken;
+      state.githubSync = session.githubSync || null;
       showApp();
       await loadRecords();
     } catch (error) {
