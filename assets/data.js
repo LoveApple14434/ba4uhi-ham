@@ -1370,16 +1370,37 @@ window.HAM_DATA = {
       "grid": "",
       "name": "黄栋",
       "timestamp": "2026-11-15T15:01:25.745Z"
+    },
+    {
+      "date": "2026-11-15",
+      "time": "20:15",
+      "callsign": "BA4VTJ",
+      "freq_rx": "438.500",
+      "freq_tx": "438.500",
+      "mode": "FM",
+      "rst_sent": 59,
+      "rst_rcvd": 59,
+      "qth": "镇江市宝华镇28楼高度",
+      "rig": "UV-32",
+      "ant": "钻石770拉杆天线",
+      "pwr": "10W",
+      "my_rig": "UV-K6",
+      "my_ant": "原装",
+      "my_pwr": "H",
+      "remarks": "",
+      "grid": "",
+      "name": "",
+      "timestamp": "2026-11-15T15:02:22.053Z"
     }
   ],
   "sourceStats": {
-    "total_qsos": 79,
-    "last_updated": "2026-11-15T15:01:25.746Z",
+    "total_qsos": 80,
+    "last_updated": "2026-11-15T15:02:22.053Z",
     "unique_callsigns": 68
   },
   "sourceMeta": {
     "version": "2.0",
     "generated_by": "ham-qsl-log",
-    "generated_at": "2026-11-15T15:01:25.746Z"
+    "generated_at": "2026-11-15T15:02:22.053Z"
   }
 };
