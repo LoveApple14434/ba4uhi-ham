@@ -1363,23 +1363,23 @@ window.HAM_DATA = {
       "rig": "威诺 N7500",
       "ant": "4.2m 玻璃钢",
       "pwr": "太阳能电池板",
-      "my_rig": "HT",
+      "my_rig": "UV-K6",
       "my_ant": "原装",
-      "my_pwr": "L",
+      "my_pwr": "H",
       "remarks": "",
       "grid": "",
       "name": "黄栋",
-      "timestamp": "2026-11-15T15:01:10.516Z"
+      "timestamp": "2026-11-15T15:01:25.745Z"
     }
   ],
   "sourceStats": {
     "total_qsos": 79,
-    "last_updated": "2026-11-15T15:01:10.519Z",
+    "last_updated": "2026-11-15T15:01:25.746Z",
     "unique_callsigns": 68
   },
   "sourceMeta": {
     "version": "2.0",
     "generated_by": "ham-qsl-log",
-    "generated_at": "2026-11-15T15:01:10.519Z"
+    "generated_at": "2026-11-15T15:01:25.746Z"
   }
 };
