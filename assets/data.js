@@ -1,4 +1,4 @@
-/* QSL log data — generated from BA4UHI QSL log. Update this file to refresh the page. */
+/* QSL log data — generated from BA4UHI QSL log. Managed by server admin. */
 window.HAM_DATA = {
   "meta": {
     "callsign": "BA4UHI",
@@ -1349,16 +1349,37 @@ window.HAM_DATA = {
       "pwr": "4W",
       "my_pwr": "5W",
       "remarks": "-"
+    },
+    {
+      "date": "2026-11-15",
+      "time": "20:11",
+      "callsign": "BD4RFG",
+      "freq_rx": "438.500",
+      "freq_tx": "438.500",
+      "mode": "FM",
+      "rst_sent": 59,
+      "rst_rcvd": 59,
+      "qth": "禄口镇",
+      "rig": "威诺 N7500",
+      "ant": "4.2m 玻璃钢",
+      "pwr": "太阳能电池板",
+      "my_rig": "HT",
+      "my_ant": "原装",
+      "my_pwr": "L",
+      "remarks": "",
+      "grid": "",
+      "name": "黄栋",
+      "timestamp": "2026-11-15T15:01:10.516Z"
     }
   ],
   "sourceStats": {
-    "total_qsos": 78,
-    "last_updated": "2026-11-13T23:24:26",
+    "total_qsos": 79,
+    "last_updated": "2026-11-15T15:01:10.519Z",
     "unique_callsigns": 68
   },
   "sourceMeta": {
     "version": "2.0",
     "generated_by": "ham-qsl-log",
-    "generated_at": "2026-11-13T23:24:26"
+    "generated_at": "2026-11-15T15:01:10.519Z"
   }
 };
